@@ -7,7 +7,9 @@ import com.example.backend.mapper.UserMapper;
 import com.example.backend.model.MLoginRequest;
 import com.example.backend.model.MRegisterRequest;
 import com.example.backend.model.MRegisterResponse;
+import com.example.backend.service.TokenService;
 import com.example.backend.service.UserService;
+import com.example.backend.until.SecurityUtil;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -16,10 +18,12 @@ import java.util.Optional;
 public class UserBusiness {
     private final UserService userService;
     private final UserMapper userMapper;
+    private final TokenService tokenService;
 
-    public UserBusiness(UserService userService, UserMapper userMapper) {
+    public UserBusiness(UserService userService, UserMapper userMapper, TokenService tokenService) {
         this.userService = userService;
         this.userMapper = userMapper;
+        this.tokenService = tokenService;
     }
 
     public String login(MLoginRequest request) throws BaseException {
@@ -27,16 +31,31 @@ public class UserBusiness {
 
         // validate database
         Optional<User> opt = userService.findByEmail(request.getEmail());
-        if(opt.isEmpty()){
+        if (opt.isEmpty()) {
             throw UserException.loginfailEmailNotFound();
         }
         User user = opt.get();
-        if(!userService.matchPassword(request.getPassword(),user.getPassword())){
+        if (!userService.matchPassword(request.getPassword(), user.getPassword())) {
             throw UserException.loginfailPasswordIncorrect();
         }
-        // TODO:generate JWT
-        String token = "JWT";
-        return token;
+
+        return tokenService.tokenize(user);
+    }
+    public String refreshToken() throws BaseException {
+        Optional<String> opt = SecurityUtil.getCurrentUserId();
+        if (opt.isEmpty()) {
+            throw UserException.unauthorized();
+        }
+
+        String userId = opt.get();
+
+        Optional<User> optUser = userService.findById(userId);
+        if (optUser.isEmpty()) {
+            throw UserException.notFound();
+        }
+
+        User user = optUser.get();
+        return tokenService.tokenize(user);
     }
 
     public MRegisterResponse register(MRegisterRequest request) throws BaseException {

@@ -6,3 +6,8 @@ spring:
     url: jdbc:postgresql://localhost/backend
     username: postgres
     password: admin99#
+---
+app:
+  token:
+    secret: Dota2Secret2023
+    issuer: Lw

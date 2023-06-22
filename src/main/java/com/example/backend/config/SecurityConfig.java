@@ -1,5 +1,7 @@
 package com.example.backend.config;
 
+import com.example.backend.config.token.TokenFilterConfiguerer;
+import com.example.backend.service.TokenService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -12,10 +14,8 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    //    private final TokenService tokenService;
-//    public SecurityConfig(TokenService tokenService) {
-//        this.tokenService = tokenService;
-//    }
+    private final TokenService tokenService;
+
     private final String[] PUBLIC = {
             "/actuator/**",
             "/user/register",
@@ -24,6 +24,10 @@ public class SecurityConfig {
             "/user/resend-activation-email",
             "/socket/**"
     };
+
+    public SecurityConfig(TokenService tokenService) {
+        this.tokenService = tokenService;
+    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -35,32 +39,11 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeRequests()
-                        .requestMatchers(PUBLIC).anonymous()
-                        .anyRequest().authenticated()
-                ;
+                .requestMatchers(PUBLIC).anonymous()
+                .anyRequest().authenticated()
+                .and().apply(new TokenFilterConfiguerer(tokenService))
+        ;
         return http.build();
     }
-//    @Bean
-//    public SecurityFilterChain configure(HttpSecurity http) throws Exception {
-//        return http.cors(config -> {
-//                    CorsConfiguration cors = new CorsConfiguration();
-//                    cors.setAllowCredentials(true);
-//                    cors.setAllowedOriginPatterns(Collections.singletonList("http://*"));
-//                    cors.addAllowedHeader("*");
-//                    cors.addAllowedMethod("GET");
-//                    cors.addAllowedMethod("POST");
-//                    cors.addAllowedMethod("PUT");
-//                    cors.addAllowedMethod("DELETE");
-//                    cors.addAllowedMethod("OPTIONS");
-//
-//                    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-//                    source.registerCorsConfiguration("/**", cors);
-//
-//                    config.configurationSource(source);
-//        }).csrf().disable()
-//                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-//                .and().authorizeRequests().requestMatchers(PUBLIC).anonymous()
-//                .anyRequest().authenticated()
-//                .and().build();
-//    }
+
 }
